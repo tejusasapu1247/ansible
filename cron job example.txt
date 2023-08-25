@@ -1,0 +1,19 @@
+......................................................cron job example...............................
+---
+ - name: Cron Job example to collect system information 
+   hosts: appservers
+   tasks:
+     - name: Play 1 => collect the disk space
+       cron:
+         name: check disk space 
+         minute: 30
+         job: "df -h >> /home/moksha/DiskInfo.txt"
+         state: present
+     - name: Play 2 => check memory usuage 
+       cron:
+         name: check memory usuage 
+         minute: 30
+         job: "free -m > /home/moksha/MemoryInfo.txt"
+         state: present
+         
+
