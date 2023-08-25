@@ -1,0 +1,272 @@
+/////////////////////////////////////Ansible roles////////////////////////////////
+The below is the playbook which is containing a role called SampleRole
+
+root@ip-172-31-47-185:/etc/ansible/roles# cat Template_role_example.yml 
+---
+ - name: use smaple role 
+   hosts: appservers
+   become: true 
+   roles: 
+     - role: /etc/ansible/roles/sampleROle
+     
+     
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ SampleRole @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+root@ip-172-31-47-185:/etc/ansible/roles# cd sampleROle/
+
+root@ip-172-31-47-185:/etc/ansible/roles/sampleROle# ls
+
+README.md  defaults  files  handlers  meta  tasks  templates  tests  vars
+
+.......................................................................................contents of Files folder
+
+root@ip-172-31-47-185:/etc/ansible/roles/sampleROle# cd files/
+root@ip-172-31-47-185:/etc/ansible/roles/sampleROle/files# ls
+File1.txt
+
+root@ip-172-31-47-185:/etc/ansible/roles/sampleROle/files# cat File1.txt 
+Hi Friend!
+Welcome to Ansible Roles...
+Happy learning !!!
+
+........................................................................................contents of Templates folder 
+
+root@ip-172-31-47-185:/etc/ansible/roles/sampleROle/templates# ls
+sample.j2
+
+root@ip-172-31-47-185:/etc/ansible/roles/sampleROle/templates# cat sample.j2 
+Welocme to {{ ansible_version }}
+This file is created on {{ ansible_date_time.date }}
+........................................................................................contents of tasks folder 
+
+root@ip-172-31-47-185:/etc/ansible/roles/sampleROle/tasks# ls
+main.yml
+
+root@ip-172-31-47-185:/etc/ansible/roles/sampleROle/tasks# cat main.yml 
+---
+# tasks file for sampleROle
+ - name: Copy motd file 
+   copy:
+     src: "{{item}}"
+     dest: /home/moksha/
+     owner: root
+     group: root
+     mode: 0444
+   with_items:
+     - templates/sample.j2
+     - files/File1.txt 
+
+Now once this role has been successfully executed with the command 
+
+ansible-playbook Template_role_example.yml
+
+let's check the target server now which is (appservers which is mentioned in Template_role_example.yml )
+
+
+.................contents in target server...........................
+
+root@ip-172-31-43-87:/home/moksha# ls
+File1.txt  sample.j2
+
+root@ip-172-31-43-87:/home/moksha# cat File1.txt 
+Hi Friend!
+Welcome to Ansible Roles...
+Happy learning !!!
+
+root@ip-172-31-43-87:/home/moksha# cat sample.j2 
+Welocme to {{ ansible_version }}
+This file is created on {{ ansible_date_time.date }}
+root@ip-172-31-43-87:/home/moksha#
+
+.................................................................................................
+==================================================================================================
+***********************************Ansible role Example2******************************************
+root@ip-172-31-47-185:/etc/ansible/roles# ls
+Template_role_example.yml  apache-vhost.yml  apache2  sampleROle
+
+root@ip-172-31-47-185:/etc/ansible/roles# cat apache-vhost.yml 
+--- 
+ - name: create an apache host 
+   hosts: appservers
+   become: true 
+   roles:
+     - apache2
+   post_tasks:
+     - name: copy index.html to target
+       copy:
+         src: /etc/ansible/roles/apache2/files/index.html
+         dest: "/var/www/html/{{ ansible_hostname }}"
+       notify: restart_apache2
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@apache2 role@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+root@ip-172-31-47-185:/etc/ansible/roles# cd apache2/
+root@ip-172-31-47-185:/etc/ansible/roles/apache2# ls
+README.md  defaults  files  handlers  meta  tasks  templates  tests  vars
+..................................................................................contents in files folder
+root@ip-172-31-47-185:/etc/ansible/roles/apache2# cd 
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/files# ls
+index.html
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/files# cat index.html 
+Welocme to this host
+
+
+..................................................................................contents in handlers folder
+root@ip-172-31-47-185:/etc/ansible/roles/apache2# ls
+README.md  defaults  files  handlers  meta  tasks  templates  tests  vars
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2# cd handlers/
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/handlers# ls
+main.yml
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/handlers# cat main.yml 
+---
+ - name: restart_apache2
+   service: 
+     name: apache2
+     state: restarted 
+# handlers file for httpd
+
+.................................................................................contents in tasks folder
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2# ls
+README.md  defaults  files  handlers  meta  tasks  templates  tests  vars
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2# cd tasks/
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/tasks# ls
+main.yml
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/tasks# cat main.yml 
+---
+ - name: Install apache2 service 
+   become: yes
+   apt: 
+     name: apache2
+     state: present 
+ - name: start and enable apache2
+   service:
+     name: apache2
+     state: started
+     enabled: true
+ - name: copy vhost config file 
+   template: 
+     src: templates/vhost.j2
+     dest: /etc/apache2/vhost.conf
+     mode: 0644
+     group: root
+     owner: root
+.................................................................................contents  in templates folder 
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/templates# ls
+vhost.j2
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/templates# cat vhost.j2 
+
+<VirtualHost *:80>
+        ServerAdmin webmaster@{{ ansible_fqdn }}
+        ServerName {{ ansible_fqdn }}
+        ErrorLog logs/{{ ansible_hostname }}-error.log
+        CustomLog logs/{{ansible_hostname }}-common.log common
+        DocumentRoot /var/www/vhosts/{{ ansible_hostname }}/
+
+        <Directory /var/www/vhosts/{{ ansible_hostname }}>        
+                Options +Indexes +FollowSymlinks +Includes
+                Order allow,deny
+                Allow from all
+        </Directory>
+</VirtualHost>        
+
+root@ip-172-31-47-185:/etc/ansible/roles/apache2/templates# 
+
+
+
+root@ip-172-31-47-185:/etc/ansible/roles# ansible-playbook apache-vhost.yml 
+
+PLAY [create an apache host] *********************************************************************************************************************************
+
+TASK [Gathering Facts] ***************************************************************************************************************************************
+ok: [server1]
+
+TASK [apache2 : Install apache2 service] *********************************************************************************************************************
+ok: [server1]
+
+TASK [apache2 : start and enable apache2] ********************************************************************************************************************
+ok: [server1]
+
+TASK [apache2 : copy vhost config file] **********************************************************************************************************************
+ok: [server1]
+
+TASK [copy index.html to target] *****************************************************************************************************************************
+ok: [server1]
+
+PLAY RECAP ***************************************************************************************************************************************************
+server1                    : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+root@ip-172-31-47-185:/etc/ansible/roles# 
+
+Successfully executed on the control machine.....Now let's check the status of the apache2 service status using ad hoc command from the control node itself 
+
+=============================================================================================================================
+
+root@ip-172-31-47-185:/etc/ansible/roles# ansible appservers -a "systemctl is-active apache2"
+server1 | CHANGED | rc=0 >>
+active
+
+Here active means the apche2 server is actively running on the target machine.
+
+
+root@ip-172-31-47-185:/etc/ansible/roles# ansible appservers -a 'cat /etc/apache2/vhost.conf'
+server1 | CHANGED | rc=0 >>
+<VirtualHost *:80>
+        ServerAdmin webmaster@ip-172-31-43-87.ap-south-1.compute.internal
+        ServerName ip-172-31-43-87.ap-south-1.compute.internal
+        ErrorLog logs/ip-172-31-43-87-error.log
+        CustomLog logs/ip-172-31-43-87-common.log common
+        DocumentRoot /var/www/vhosts/ip-172-31-43-87/
+
+        <Directory /var/www/vhosts/ip-172-31-43-87>        
+                Options +Indexes +FollowSymlinks +Includes
+                Order allow,deny
+                Allow from all
+        </Directory>
+</VirtualHost>        
+root@ip-172-31-47-185:/etc/ansible/roles#
+
+__________________________________________checking manually from the target server________________________________________________________________________________
+
+root@ip-172-31-43-87:~# systemctl status apache2
+● apache2.service - The Apache HTTP Server
+     Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor preset: enabled)
+     Active: active (running) since Thu 2023-08-24 13:19:45 UTC; 14min ago
+       Docs: https://httpd.apache.org/docs/2.4/
+    Process: 352 ExecStart=/usr/sbin/apachectl start (code=exited, status=0/SUCCESS)
+   Main PID: 377 (apache2)
+      Tasks: 55 (limit: 1121)
+     Memory: 7.5M
+        CPU: 81ms
+     CGroup: /system.slice/apache2.service
+             ├─377 /usr/sbin/apache2 -k start
+             ├─383 /usr/sbin/apache2 -k start
+             └─384 /usr/sbin/apache2 -k start
+
+Aug 24 13:19:45 ip-172-31-43-87 systemd[1]: Starting The Apache HTTP Server...
+Aug 24 13:19:45 ip-172-31-43-87 systemd[1]: Started The Apache HTTP Server.
+
+
+root@ip-172-31-43-87:/etc/apache2# ls
+apache2.conf  conf-available  conf-enabled  envvars  magic  mods-available  mods-enabled  ports.conf  sites-available  sites-enabled  vhost.conf
+root@ip-172-31-43-87:/etc/apache2# 
+
+
+root@ip-172-31-43-87:/var/www# ls
+html
+root@ip-172-31-43-87:/var/www# cd html/
+root@ip-172-31-43-87:/var/www/html# ls
+index.html  ip-172-31-43-87
+root@ip-172-31-43-87:/var/www/html# cat ip-172-31-43-87 
+Welocme to this host
+root@ip-172-31-43-87:/var/www/html#
+
