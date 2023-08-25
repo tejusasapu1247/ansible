@@ -1,3 +1,52 @@
+--------------------------------------File_creation.yml--------------------------------------
+---
+ - name: Hello World Playbook 
+   hosts: appservers
+   vars:
+     greeting: Hello World!
+   tasks:
+     - name: Basic Exmple of playbook
+       debug: 
+        msg: "{{ greeting }}"
+ - name: creating Directory in Server
+   hosts: dbservers
+   tasks:
+     - name: Creating a Directory
+       file:
+         dest: "/home/teju/FileDirectory"
+         state: directory
+ - name: Creating a file in server 
+   hosts: dbservers
+   tasks:
+     - name: Creating a file in server
+       file: 
+         dest: "/home/teju/TextFIle.txt"
+         state: touch 
+ - name: Creating multiple Directories
+   hosts: all
+   tasks:
+     - name: creating multiple directories in server
+       file:
+         dest: "{{item}}"
+         state: directory
+       loop:
+         - /home/teju/Directory_Teju
+         - /home/moksha/Directory_moksha
+
+/////////////////////////////////////////////file creation usiung loop in ansible playbook.////////////////////////////////////////////////////
+---
+ - name: Creating multiple Directories
+   hosts: all
+   tasks:
+     - name: creating multiple directories in server
+       file:
+         dest: "{{item}}"
+         state: directory
+       loop:
+         - /home/teju/Directory_Teju
+         - /home/moksha/Directory_moksha
+
+
 --------------------------------------install_apache.yml--------------------------------------
 ---
  - name: Installing apache on servers
