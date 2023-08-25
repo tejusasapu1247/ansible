@@ -133,54 +133,23 @@ Example-2 using dictionaries
          msg: "{{ students }}" or 
          msg: "{{ students.Teja.Fav }}"
          
---------------------------------------File_creation.yml--------------------------------------
----
- - name: Hello World Playbook 
-   hosts: appservers
-   vars:
-     greeting: Hello World!
-   tasks:
-     - name: Basic Exmple of playbook
-       debug: 
-        msg: "{{ greeting }}"
- - name: creating Directory in Server
-   hosts: dbservers
-   tasks:
-     - name: Creating a Directory
-       file:
-         dest: "/home/teju/FileDirectory"
-         state: directory
- - name: Creating a file in server 
-   hosts: dbservers
-   tasks:
-     - name: Creating a file in server
-       file: 
-         dest: "/home/teju/TextFIle.txt"
-         state: touch 
- - name: Creating multiple Directories
-   hosts: all
-   tasks:
-     - name: creating multiple directories in server
-       file:
-         dest: "{{item}}"
-         state: directory
-       loop:
-         - /home/teju/Directory_Teju
-         - /home/moksha/Directory_moksha
 
-/////////////////////////////////////////////file creation usiung loop in ansible playbook.////////////////////////////////////////////////////
+ ----------------------magic_variable.yml-------------------------------------------]
+root@ip-172-31-47-185:/home/teja/playbooks# cat magic_variables.yml 
 ---
- - name: Creating multiple Directories
-   hosts: all
-   tasks:
-     - name: creating multiple directories in server
-       file:
-         dest: "{{item}}"
-         state: directory
-       loop:
-         - /home/teju/Directory_Teju
-         - /home/moksha/Directory_moksha
-         
+ - name: Getting information of  target hosts 
+   hosts: appservers
+   vars: 
+     Facts:
+         IP: "{{ansible_hostname}}"
+         fqdn: "{{ ansible_fqdn }}"
+         version: "{{ansible_version}}"
+   tasks: 
+    - name: Getting ansible version and other info 
+      debug: 
+       msg: "{{ Facts }}"
+       
+        
          
 
 
