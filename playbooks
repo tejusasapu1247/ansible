@@ -1,0 +1,155 @@
+--------------------------------------install_apache.yml--------------------------------------
+---
+ - name: Installing apache on servers
+   hosts: dbservers
+   become: yes
+   become_user: root
+   tasks: 
+     - name: installing latest version of apache
+       apt: 
+         name: apache2
+         update_cache: yes
+         state: latest
+     - name: enabled mod_rewrite
+       apache2_module: name=rewrite state=present
+       notify: 
+         - restart apache2 
+   handlers: 
+     - name: Make sure the server is started
+       service:
+         name: apache2
+         state: restarted
+
+--------------------------------------Install_Nginx.yml--------------------------------------
+
+---
+ - name: Installing nginx on servers
+   hosts: dbservers
+   become: yes
+   become_user: root
+   tasks: 
+     - name: installing latest version of nginx
+       apt: 
+         name: nginx
+         state: latest
+     - name: Make sure the server is started
+       service:
+         name: nginx
+         state: started
+----------------------------------getting git version---------------------------
+
+root@ip-172-31-47-185:/home/ubuntu# cat git_version.yml 
+---
+ - name: Check if Git is installed already or not and Git version if it's installed
+   hosts: appservers  
+   tasks:
+     - name: find git version
+       command: "git --version"
+       changed_when: false
+       failed_when: false
+       ignore_errors: yes
+       register: git_version
+     - debug:
+         var: git_version.stdout
+
+
+-----------------------checking git version using shell-------------------------
+---
+ - name: Checking git version 
+   hosts: appservers
+   tasks: 
+     - name: check the git version 
+       shell: "git --version"
+       register: git_version
+     - debug: 
+        var: git_version.stdout
+       
+-------------------------------------git installation with specific version (not worked for me)----------------------------------------
+---
+ - name: Installing git with specific version 
+   hosts: appservers
+   become: true
+   tasks: 
+   - name: updating packages
+     apt: 
+      update_cache: true
+   - name: installing git 
+     apt: 
+      name: "{{ item }}"
+      state: latest
+     with_items: 
+        - git
+
+--------------------------------------example for register module--------------------------------------
+
+The Ansible register module is used to capture the output of a task to a variable.
+In most cases, the task to be executed on the remote host is usually defined by the shell or command module.
+Once the register module captures the output, it is referenced in different scenarios,
+for example, in conditional statements or, printing the output to stdout.
+
+root@ip-172-31-47-185:/home/teja/Playbooks# cat Register_module_example.yml 
+---
+ - name: Example Playbook for Register module
+   hosts: appservers
+   tasks:
+     - name: storing the output into register module as well creating file in target server 
+       shell: "df -h && >> /home/moksha/info.txt"
+       register: disk_space
+     - debug:
+        var: disk_space.stdout
+
+-----------------------------------------------------------------------------------------------------------
+$ cat Ansible_info.yml
+---
+ - name: Getting info of ansible
+   hosts: all
+   tasks: 
+    - name: Getting ansible version info 
+      debug: 
+       var: ansible_version
+       
+THe above snippet is for getting the ansible version from all of the servers
+
+this will ptint the following details
+
+$ ansible-playbook Ansible_info.yml
+
+PLAY [Getting info of ansible] *******************************************************************************************************************
+
+TASK [Gathering Facts] ***************************************************************************************************************************
+ok: [server1]
+fatal: [server2]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: ssh: connect to host 172.31.10.191 port 22: Connection timed out", "unreachable": true}
+
+TASK [Getting ansible version info] **************************************************************************************************************
+ok: [server1] => {
+    "ansible_version": {
+        "full": "2.15.2",
+        "major": 2,
+        "minor": 15,
+        "revision": 2,
+        "string": "2.15.2"
+    }
+}
+
+
+
+---------------------------------Custom Inventory-------------------------------------
+
+root@ip-172-31-47-185:/home/teja/Playbooks# cat inventory 
+[appservers]
+server1 ansible_host=172.31.43.87 ansible_ssh_user=moksha  ansible_ssh_pass=moksha
+
+[dbservers]
+server2 ansible_host=172.31.10.191 ansible_ssh_user=teju ansible_ssh_pass=teju
+root@ip-172-31-47-185:/home/teja/Playbooks# 
+
+If we want to list out the servers under custom inventory, use the below command
+
+ansible-inventory -i inventory --list
+
+This is the custom inventory file which is created in /home/teja/Playbooks/.
+Now instead of default hosts file which is there in /etc/ansible/hosts file, 
+we can use this custom inventory file in our playbook execution
+ 
+ we need to use this command ansible-playbook -i inventory playbook_name
+
