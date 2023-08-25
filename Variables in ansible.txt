@@ -1,0 +1,187 @@
+ ........................Variables in ansible............................
+The most basic usage of variables is to define a variable using a single value in the playbook YAML file
+we can use variables in ansible in 3 ways.
+1.using vars
+2.using --extra-vars or -e 
+3.using vara_files  
+
+--------------------------------------Varible_example.yml--------------------------------------
+
+---
+ - name: Example playbook for Variables in Ansible 
+   hosts: all
+   vars: 
+     a: 10
+     b: 20
+   tasks: 
+     - name: Addition of 2 numbers
+       debug: 
+         msg: "A+B={{a+b}}"
+
+
+----------------------Using --extra-vars in ansible playbook -----------------------------------
+
+If we want to use different variables each time running the playbook or
+want to use different host group everytime, the best way is to --extra-vars ot -e variable 
+whie executing the playbook
+
+For example, you create an Ansible playbook that runs on a specific set of hosts and 
+sets those hosts to a group labeled: webgroup. As you complete your Ansible playbook testing, 
+you enable it for production use.
+
+Unfortunately, the operations team or engineers need to run this playbook 
+on a different group of hosts called appgroup. By explicitly hard-coding the hosts group name
+within the Ansible playbook, you've limited its flexibility requiring changes in the Ansible playbook itself.
+
+What is a better method to solve this issue?
+
+The use of the --extra-vars parameter and modifying the Ansible playbook to take a variable (e.g., nodes)
+when declaring your hosts. The following example illustrates it:
+
+- hosts: "{{ nodes }}"
+  vars_files:
+    - vars/main.yml
+  roles:
+    - { role: geerlingguy.apache }
+
+To pass a value to nodes, use the --extra-vars or -e option while running the Ansible playbook, as seen below. 
+
+# ansible-playbook myplaybook.yaml --extra-vars "nodes=webgroup”
+
+## Or
+
+# ansible-playbook myplaybook.yaml --extra-vars "nodes=appgroup”
+This ensures you avoid accidental running of the playbook against hardcoded hosts.
+If the Ansible playbook fails to specify the hosts while running, 
+Ansible will throw an error and stop, saying no value for nodes.
+
+Example::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+root@ip-172-31-47-185:/home/teja/Playbooks# cat extra-Var_example.yml 
+---
+ - name: Example of extra-vars parameters 
+   hosts: "{{ hosts }}"
+   vars: 
+     greetings: "Good Day!!!"
+   tasks: 
+     - name: Say greetings 
+       debug:
+         msg: "Hello Teju!!! {{ greetings }}"
+
+root@ip-172-31-47-185:/home/teja/Playbooks# ansible-playbook extra-Var_example.yml -e "hosts=appservers"
+root@ip-172-31-47-185:/home/teja/Playbooks# ansible-playbook extra-Var_example.yml --extra-vars "hosts=appservers greetings=Hello World!!!"
+
+
+--------------------------------------Example_Var_files.yml--------------------------------------
+--- 
+ - name: Example of vars_Files in servers
+   hosts: all
+   vars_files: 
+      - variables.yml
+   tasks: 
+     - name: Addition of 2 numbers
+       debug:
+         msg: "A+B={{a+b}}"
+     - name: Subtraction of 2 numbers
+       debug:
+         msg: "A-B={{a-b}}"
+     - name: Greeting someone 
+       debug: 
+         msg: "Hello Teju, {{greetings}}"
+
+
+--------------------------------------variables.yml--------------------------------------
+
+a: 30
+b: 20
+greetings: Good Day!
+
+--------------------------------------Array_Varible_example.yml--------------------------------------
+
+---
+ - name: Example on Array variable
+   hosts: all
+   vars:
+     students: 
+       - Teja
+       - Moksha
+       - Rakesh 
+   tasks:
+     - name: printing array of students using array variable
+       debug: 
+         msg: "{{ students[1] }}"
+
+This will print Moksha and if we mention "{{ students }}" then all the names in the array will get prqinted
+
+
+Example-2 using dictionaries
+
+---
+ - name: Example on Array variable
+   hosts: all
+   vars:
+     students:
+       Teja:
+         gender: female
+         Fav: Ice Cream
+       Rakesh :
+         gender: Male
+         Fav: Chocolate
+   tasks:
+     - name: printing array of students using array variable
+       debug:
+         msg: "{{ students }}" or 
+         msg: "{{ students.Teja.Fav }}"
+         
+--------------------------------------File_creation.yml--------------------------------------
+---
+ - name: Hello World Playbook 
+   hosts: appservers
+   vars:
+     greeting: Hello World!
+   tasks:
+     - name: Basic Exmple of playbook
+       debug: 
+        msg: "{{ greeting }}"
+ - name: creating Directory in Server
+   hosts: dbservers
+   tasks:
+     - name: Creating a Directory
+       file:
+         dest: "/home/teju/FileDirectory"
+         state: directory
+ - name: Creating a file in server 
+   hosts: dbservers
+   tasks:
+     - name: Creating a file in server
+       file: 
+         dest: "/home/teju/TextFIle.txt"
+         state: touch 
+ - name: Creating multiple Directories
+   hosts: all
+   tasks:
+     - name: creating multiple directories in server
+       file:
+         dest: "{{item}}"
+         state: directory
+       loop:
+         - /home/teju/Directory_Teju
+         - /home/moksha/Directory_moksha
+
+/////////////////////////////////////////////file creation usiung loop in ansible playbook.////////////////////////////////////////////////////
+---
+ - name: Creating multiple Directories
+   hosts: all
+   tasks:
+     - name: creating multiple directories in server
+       file:
+         dest: "{{item}}"
+         state: directory
+       loop:
+         - /home/teju/Directory_Teju
+         - /home/moksha/Directory_moksha
+         
+         
+
+
+
